@@ -1,0 +1,43 @@
+package olc1.analizadores;
+
+import java.util.LinkedList;
+import java_cup.runtime.*;
+import olc1.ht1.TokenError;
+import olc1.ht1.Nodo;
+
+parser code 
+{:    
+    public static LinkedList<TokenError> tablaErrores = new LinkedList<TokenError>();
+    public static String consola = "";
+
+    public void syntax_error(Symbol s){ 
+        tablaErrores.add(new TokenError(String.valueOf(s.value), (s.left + 1), (s.right + 1), "Sintáctico", "No se esperaba: " + s.value));
+        System.err.println("Error sintáctico en la Línea: " + (s.left + 1) + ", Columna: " + (s.right + 1) + ". No se esperaba este componente: " + s.value + "."); 
+    } 
+
+    public void unrecovered_syntax_error(Symbol s) throws java.lang.Exception{ 
+        tablaErrores.add(new TokenError(String.valueOf(s.value), (s.left + 1), (s.right + 1), "Sintáctico", "Error irrecuperable: " + s.value));
+        System.err.println("Error sintáctico irrecuperable en la Línea: " + (s.left + 1) + ", Columna " + (s.right + 1) + ". Componente " + s.value + " no reconocido.");
+    }  
+
+:} 
+
+/* Terminales */
+terminal String para, parc, coma, puntoycoma;
+terminal String extraer;
+terminal String entero, identificador;
+  
+/* No terminales */
+non terminal INICIO, INST;
+non terminal Nodo EXP;
+
+start with INICIO; 
+
+/* GLC */
+INICIO      ::=     INST {: RESULT = new Object(); :};
+
+INST        ::=     extraer para EXP:exp parc puntoycoma {: exp.validarContenido(); consola = exp.getValorLista(); System.err.println(exp.getContador() + exp.getValorLista()); RESULT = new Object(); :};
+
+EXP         ::=     EXP:exp coma entero:ent {: exp.setContador(exp.getContador()+1); exp.agregarValor(Integer.parseInt(ent)); /*System.err.println(exp.getContador() + " " + exp.getPosicionInicial() + " " + exp.getCantidadPalabras());*/ RESULT = exp; :}
+            |       EXP:exp coma identificador:ident {: exp.setContador(exp.getContador()+1); exp.agregarValor(ident); /*System.err.println(exp.getContador() + " " + exp.getPosicionInicial() + " " + exp.getCantidadPalabras());*/ RESULT = exp; :}
+            |       entero:ent {: RESULT = new Nodo(Integer.parseInt(ent)); :};
